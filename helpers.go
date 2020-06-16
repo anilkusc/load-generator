@@ -6,12 +6,18 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 )
 
-func MakeRequest(url string, method string, headers []string) (int, string) {
+func MakeRequest(url string, method string, headers []string, parameters string, timeout int) (int, string) {
+
+	if url != "" {
+		url = url + "?" + parameters
+	}
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	client := &http.Client{}
+
+	client := &http.Client{Timeout: time.Duration(timeout) * time.Second}
 
 	req, err := http.NewRequest(method, url, nil)
 	if headers[0] != "" {
