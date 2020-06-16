@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/tls"
 	"io/ioutil"
 	"log"
@@ -9,7 +10,7 @@ import (
 	"time"
 )
 
-func MakeRequest(url string, method string, headers []string, parameters string, timeout int) (int, string) {
+func MakeRequest(url string, method string, headers []string, parameters string, timeout int, data string) (int, string) {
 
 	if url != "" {
 		url = url + "?" + parameters
@@ -18,8 +19,20 @@ func MakeRequest(url string, method string, headers []string, parameters string,
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	client := &http.Client{Timeout: time.Duration(timeout) * time.Second}
-
-	req, err := http.NewRequest(method, url, nil)
+	var req *http.Request
+	var err error
+	if data != "" {
+		jsonData := []byte(data)
+		req, err = http.NewRequest(method, url, bytes.NewBuffer(jsonData))
+		if err != nil {
+			log.Fatalln(err)
+		}
+	} else {
+		req, err = http.NewRequest(method, url, nil)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}
 	if headers[0] != "" {
 		for _, header := range headers {
 			splitted := strings.Split(header, ":")
@@ -27,9 +40,6 @@ func MakeRequest(url string, method string, headers []string, parameters string,
 		}
 	}
 
-	if err != nil {
-		log.Fatalln(err)
-	}
 	resp, err2 := client.Do(req)
 
 	if err2 != nil {
